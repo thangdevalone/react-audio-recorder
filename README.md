@@ -1,4 +1,4 @@
-# react-audio-recorder-lite
+# react-ts-audio-recorder
 
 Lightweight and modern audio recording hooks for React. Built on top of the Web Audio API with friendly APIs, WAV fallback, and MediaRecorder support for WebM and MP3.
 
@@ -16,13 +16,13 @@ Lightweight and modern audio recording hooks for React. Built on top of the Web 
 Pick the package manager you already use. This repo uses **npm**:
 
 ```bash
-npm install react-audio-recorder-lite
+npm install react-ts-audio-recorder
 ```
 
 ## Quick start
 
 ```tsx
-import { useAudioRecorder } from "react-audio-recorder-lite";
+import { useAudioRecorder } from "react-ts-audio-recorder";
 
 export function RecorderDemo() {
   const recorder = useAudioRecorder({
@@ -85,7 +85,7 @@ npm install
 npm run dev
 ```
 
-The demo imports the hook straight from the root package (`react-audio-recorder-lite`) via a `file:` dependency so you can iterate on the library and the UI simultaneously.
+The demo imports the hook straight from the root package (`react-ts-audio-recorder`) via a `file:` dependency so you can iterate on the library and the UI simultaneously.
 
 ## License
 

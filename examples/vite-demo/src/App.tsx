@@ -1,56 +1,97 @@
-import { useMemo } from "react";
-import { useAudioRecorder } from "react-audio-recorder-lite";
+import { useMemo, useState } from "react";
+import type { RecorderFormat } from "react-ts-audio-recorder";
+import { useAudioRecorder } from "react-ts-audio-recorder";
+import "./App.css";
 
-const formatLabel: Record<string, string> = {
-  wav: "WAV (lossless)",
-  webm: "WebM (Opus)",
-  mp3: "MP3"
+const formatLabels: Record<RecorderFormat, string> = {
+  webm: "WebM / Opus",
+  mp3: "MP3",
+  wav: "WAV (PCM)"
 };
 
-export function App() {
+const formatOptions: RecorderFormat[] = ["webm", "mp3", "wav"];
+
+export default function App() {
+  const [format, setFormat] = useState<RecorderFormat>("webm");
+
   const recorder = useAudioRecorder({
-    format: "webm",
+    format,
     autoStopMs: 60_000,
     onStop: (recording) => {
       console.info("Recording finished", recording);
+    },
+    onError: (error) => {
+      console.error("Recorder error", error);
     }
   });
 
   const supportBadges = useMemo(() => {
-    return Object.entries(recorder.supports).map(([key, value]) => (
-      <span key={key} className={`chip ${value ? "chip--ok" : "chip--nope"}`}>
-        {formatLabel[key] ?? key}: {value ? "Yes" : "No"}
-      </span>
-    ));
+    return (Object.entries(recorder.supports) as Array<[RecorderFormat, boolean]>).map(
+      ([key, value]) => (
+        <span key={key} className={`chip ${value ? "chip--ok" : "chip--nope"}`}>
+          {formatLabels[key]}: {value ? "Yes" : "No"}
+        </span>
+      )
+    );
   }, [recorder.supports]);
 
-  const canRecord = recorder.isBrowserSupported && recorder.status !== "recording";
+  const canStart = recorder.isBrowserSupported && recorder.status !== "recording";
+  const canStop = recorder.status === "recording" || recorder.status === "paused";
+  const durationSeconds = (recorder.durationMs / 1000).toFixed(1);
+  const bytesKb = (recorder.bytes / 1024).toFixed(1);
 
   return (
-    <main className="page">
-      <header>
-        <h1>React Audio Recorder Lite</h1>
-        <p>Hooks-first recorder with WAV/WebM/MP3 formats.</p>
-      </header>
+    <main className="demo">
+      <section className="panel">
+        <header>
+          <p className="eyebrow">Example</p>
+          <h1>React Audio Recorder Lite</h1>
+          <p className="lede">
+            Hooks-first audio capture with WAV/WebM/MP3 support. Change the format, start recording,
+            and instantly preview or download the result.
+          </p>
+        </header>
 
-      <section className="card">
+        <div className="selectors">
+          <label className="select-group">
+            <span>Output format</span>
+            <select
+              value={format}
+              onChange={(event) => setFormat(event.target.value as RecorderFormat)}
+            >
+              {formatOptions.map((option) => (
+                <option key={option} value={option}>
+                  {formatLabels[option]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="chips">{supportBadges}</div>
+        </div>
+
         <div className="metrics">
           <div>
-            <span className="metric-label">Status</span>
-            <strong>{recorder.status}</strong>
+            <span>Status</span>
+            <strong className={`status status--${recorder.status}`}>{recorder.status}</strong>
           </div>
           <div>
-            <span className="metric-label">Duration</span>
-            <strong>{(recorder.durationMs / 1000).toFixed(1)}s</strong>
+            <span>Duration</span>
+            <strong>{durationSeconds}s</strong>
           </div>
           <div>
-            <span className="metric-label">Bytes</span>
-            <strong>{(recorder.bytes / 1024).toFixed(1)} KB</strong>
+            <span>Bytes</span>
+            <strong>{bytesKb} KB</strong>
           </div>
         </div>
 
+        {recorder.error && (
+          <p className="error" role="status">
+            {recorder.error.message}
+          </p>
+        )}
+
         <div className="controls">
-          <button onClick={recorder.start} disabled={!canRecord}>
+          <button onClick={() => void recorder.start()} disabled={!canStart}>
             Start
           </button>
           <button onClick={recorder.pause} disabled={recorder.status !== "recording"}>
@@ -59,7 +100,7 @@ export function App() {
           <button onClick={recorder.resume} disabled={recorder.status !== "paused"}>
             Resume
           </button>
-          <button onClick={() => void recorder.stop()} disabled={recorder.status === "idle"}>
+          <button onClick={() => void recorder.stop()} disabled={!canStop}>
             Stop
           </button>
           <button className="ghost" onClick={recorder.reset}>
@@ -67,26 +108,34 @@ export function App() {
           </button>
         </div>
 
-        <div className="support-grid">
-          <span className="metric-label">Browser support</span>
-          <div className="chips">{supportBadges}</div>
-        </div>
+        {!recorder.isBrowserSupported && (
+          <p className="note">
+            Your browser does not expose MediaRecorder or AudioContext APIs required for recording.
+          </p>
+        )}
 
         {recorder.recording && (
           <div className="preview">
-            <p>
-              <strong>Last recording</strong>
+            <div>
+              <strong>Latest take</strong>
               <span>{(recorder.recording.duration / 1000).toFixed(1)}s</span>
               <span>{(recorder.recording.size / 1024).toFixed(1)} KB</span>
-            </p>
+            </div>
             <audio controls src={recorder.recording.url} />
-            <a href={recorder.recording.url} download={`recording.${recorder.recording.format}`}>
-              Download
-            </a>
+            <div className="preview-actions">
+              <a href={recorder.recording.url} download={`recording.${recorder.recording.format}`}>
+                Download
+              </a>
+              <button
+                className="ghost"
+                onClick={() => void navigator.clipboard?.writeText(recorder.recording.url)}
+              >
+                Copy URL
+              </button>
+            </div>
           </div>
         )}
       </section>
     </main>
   );
 }
-
