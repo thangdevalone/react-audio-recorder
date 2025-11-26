@@ -7,6 +7,7 @@ import {
 } from "../types";
 import { detectRecorderSupport, formatToMime, isBrowser } from "../utils/mime";
 import { PCMFrame, encodeWav } from "../utils/pcm";
+import { encodeMp3 } from "../utils/mp3";
 
 const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
@@ -77,6 +78,8 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): UseAudioRe
     onStop,
     onError
   } = options;
+  const mp3PreferFallback = options.mp3?.preferFallback ?? false;
+  const mp3FallbackBitrate = options.mp3?.fallbackBitrateKbps ?? 128;
 
   const [status, setStatus] = useState<RecorderStatus>("idle");
   const [recording, setRecording] = useState<AudioRecording | null>(null);
@@ -85,7 +88,19 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): UseAudioRe
   const [bytes, setBytes] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
-  const supports = useMemo(() => detectRecorderSupport(), []);
+  const baseSupport = useMemo(() => detectRecorderSupport(), []);
+  const supports = useMemo(() => {
+    if (baseSupport.mp3) {
+      return baseSupport;
+    }
+    const audioCtxAvailable =
+      typeof AudioContext !== "undefined" ||
+      (typeof window !== "undefined" && "webkitAudioContext" in window);
+    if (audioCtxAvailable) {
+      return { ...baseSupport, mp3: true };
+    }
+    return baseSupport;
+  }, [baseSupport]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -98,6 +113,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): UseAudioRe
   const elapsedBeforePauseRef = useRef(0);
   const activeStartRef = useRef<number | null>(null);
   const autoStopTimeoutRef = useRef<number | null>(null);
+  const mp3FallbackActiveRef = useRef(false);
 
   const computedConstraints = useMemo<MediaStreamConstraints>(() => {
     if (constraints) {
@@ -179,6 +195,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): UseAudioRe
     await cleanupAudioGraph();
     cleanupStream();
     clearAutoStop();
+    mp3FallbackActiveRef.current = false;
   }, [cleanupAudioGraph, cleanupStream, clearAutoStop]);
 
   const finalizeRecording = useCallback(
@@ -285,8 +302,14 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): UseAudioRe
     }
 
     if (pcmFramesRef.current.length) {
-      const wavBlob = encodeWav(pcmFramesRef.current, sampleRate, channelCount);
-      const result = finalizeRecording(wavBlob);
+      const blob =
+        format === "mp3" && mp3FallbackActiveRef.current
+          ? await encodeMp3(pcmFramesRef.current, sampleRate, channelCount, {
+              bitrateKbps: mp3FallbackBitrate
+            })
+          : encodeWav(pcmFramesRef.current, sampleRate, channelCount);
+      setBytes(blob.size);
+      const result = finalizeRecording(blob);
       await cleanupRecorder();
       return result;
     }
@@ -300,7 +323,8 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): UseAudioRe
     format,
     recording,
     sampleRate,
-    status
+    status,
+    mp3FallbackBitrate
   ]);
 
   const start = useCallback(async () => {
@@ -325,10 +349,12 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): UseAudioRe
       setError(null);
 
       const mimeType = formatToMime(format);
-      const canUseMediaRecorder =
+      const mediaRecorderSupported =
         typeof MediaRecorder !== "undefined" && mimeType && MediaRecorder.isTypeSupported(mimeType);
+      const shouldUseMp3Fallback =
+        format === "mp3" && (!mediaRecorderSupported || mp3PreferFallback);
 
-      if (canUseMediaRecorder) {
+      if (mediaRecorderSupported && !shouldUseMp3Fallback) {
         const recorder = new MediaRecorder(userStream, {
           mimeType,
           ...mediaRecorderOptions
@@ -354,8 +380,10 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): UseAudioRe
         };
 
         recorder.start(timeSlice);
-      } else if (format === "wav") {
+        mp3FallbackActiveRef.current = false;
+      } else if (format === "wav" || shouldUseMp3Fallback) {
         await buildPCMGraph(userStream);
+        mp3FallbackActiveRef.current = shouldUseMp3Fallback;
       } else {
         throw new Error(`${format.toUpperCase()} recording is not supported in this browser.`);
       }
@@ -385,7 +413,8 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): UseAudioRe
     timeSlice,
     cleanupRecorder,
     stop,
-    computeDuration
+    computeDuration,
+    mp3PreferFallback
   ]);
 
   const pause = useCallback(() => {

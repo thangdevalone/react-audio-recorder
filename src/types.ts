@@ -28,6 +28,11 @@ export interface RecorderLifecycleCallbacks {
   onError?: (error: Error) => void;
 }
 
+export interface Mp3Options {
+  fallbackBitrateKbps?: number;
+  preferFallback?: boolean;
+}
+
 export interface AudioRecorderOptions extends RecorderLifecycleCallbacks {
   format?: RecorderFormat;
   channelCount?: number;
@@ -36,6 +41,7 @@ export interface AudioRecorderOptions extends RecorderLifecycleCallbacks {
   constraints?: MediaStreamConstraints;
   mediaRecorderOptions?: MediaRecorderOptions;
   autoStopMs?: number;
+  mp3?: Mp3Options;
 }
 
 export interface UseAudioRecorderResult {

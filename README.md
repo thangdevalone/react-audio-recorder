@@ -1,14 +1,14 @@
 # react-ts-audio-recorder
 
-Lightweight and modern audio recording hooks for React. Built on top of the Web Audio API with friendly APIs, WAV fallback, and MediaRecorder support for WebM and MP3.
+Lightweight and modern audio recording hooks for React. Built on top of the Web Audio API with friendly APIs, WAV fallback, MediaRecorder support for WebM/MP3, and an optional LameJS-powered MP3 encoder when the browser cannot emit MP3 natively.
 
 ## Features
 
 - 🎧 Hooks-first API (`useAudioRecorder`)
 - 🌐 WAV/WebM/MP3 formats with runtime capability detection
-- ⚙️ Web Audio API fallback for lossless WAV in browsers without `MediaRecorder`
+- ⚙️ Web Audio API fallback for lossless WAV or LameJS fallback for MP3 anywhere
 - ⏱️ Duration, byte size, and chunk callbacks for streaming use-cases
-- 🧼 Zero dependencies at runtime and tree-shakeable by default
+- 🧼 Minimal dependencies with lazy-loaded MP3 encoder
 - 📦 Ready for npm or GitHub Packages publishing
 
 ## Installation
@@ -61,6 +61,7 @@ export function RecorderDemo() {
 | `constraints` | `MediaStreamConstraints` | smart defaults | Pass custom `getUserMedia` constraints. |
 | `mediaRecorderOptions` | `MediaRecorderOptions` | - | Extend native recorder options (bitrate, etc.). |
 | `autoStopMs` | `number` | - | Automatically stop after the provided duration. |
+| `mp3` | `{ fallbackBitrateKbps?: number; preferFallback?: boolean; }` | `{ fallbackBitrateKbps: 128 }` | Configure the LameJS MP3 fallback (bitrate + whether to skip native MediaRecorder when available). |
 | `onChunk` | `(ctx) => void` | - | Receive every chunk as it's recorded. |
 | `onStop` | `(recording) => void` | - | Get the final blob metadata. |
 | `onError` | `(error) => void` | - | Error hook. |
@@ -86,6 +87,27 @@ npm run dev
 ```
 
 The demo imports the hook straight from the root package (`react-ts-audio-recorder`) via a `file:` dependency so you can iterate on the library and the UI simultaneously.
+
+## MP3 fallback encoding
+
+Most stable browsers still cannot emit MP3 blobs through `MediaRecorder`. When you request `format: "mp3"`, the hook will:
+
+1. Prefer the native `MediaRecorder` pipeline when `MediaRecorder.isTypeSupported("audio/mpeg")` returns `true`.
+2. Automatically fall back to recording raw PCM frames and lazily loading **LameJS** to encode them into MP3 entirely in JavaScript whenever the native API is missing.
+
+You can tweak the fallback through the `mp3` option:
+
+```ts
+const recorder = useAudioRecorder({
+  format: "mp3",
+  mp3: {
+    fallbackBitrateKbps: 192,
+    preferFallback: false // set true to always use the LameJS path
+  }
+});
+```
+
+The fallback kicks in as long as `AudioContext` is available, so MP3 becomes a reliable target even on Safari or Chromium builds without native encoder support.
 
 ## License
 
