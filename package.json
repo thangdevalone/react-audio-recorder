@@ -1,6 +1,6 @@
 {
   "name": "react-ts-audio-recorder",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lightweight React audio recorder built on the Web Audio API with WAV, WebM, and MP3 support.",
   "type": "module",
   "main": "dist/index.cjs",
