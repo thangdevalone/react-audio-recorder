@@ -87,15 +87,6 @@ npm run dev
 
 The demo imports the hook straight from the root package (`react-audio-recorder-lite`) via a `file:` dependency so you can iterate on the library and the UI simultaneously.
 
-## Publishing
-
-```bash
-npm run build
-npm publish --access public
-```
-
-For GitHub Packages, configure the registry in `.npmrc` and push the built `dist/` output. The library ships as ESM + CJS with bundled type definitions (TSUP).
-
 ## License
 
 MIT © Thang Dev
