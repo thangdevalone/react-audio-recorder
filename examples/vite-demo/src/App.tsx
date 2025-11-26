@@ -128,7 +128,7 @@ export default function App() {
               </a>
               <button
                 className="ghost"
-                onClick={() => void navigator.clipboard?.writeText(recorder.recording.url)}
+                onClick={() => void navigator.clipboard?.writeText(recorder.recording?.url ?? "")}
               >
                 Copy URL
               </button>
