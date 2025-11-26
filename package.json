@@ -1,0 +1,72 @@
+{
+  "name": "react-audio-recorder",
+  "version": "0.1.0",
+  "description": "Lightweight React audio recorder built on the Web Audio API with WAV, WebM, and MP3 support.",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "react",
+    "audio",
+    "recorder",
+    "web-audio-api",
+    "mediarecorder",
+    "wav",
+    "webm",
+    "mp3",
+    "hooks"
+  ],
+  "author": "Thang Dev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thangdevalone/react-audio-recorder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/thangdevalone/react-audio-recorder/issues"
+  },
+  "homepage": "https://github.com/thangdevalone/react-audio-recorder#readme",
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@vitest/coverage-v8": "^4.0.14",
+    "happy-dom": "^20.0.10",
+    "react": "^19.2.0",
+    "tslib": "^2.8.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "packageManager": "npm@10.9.0"
+}
