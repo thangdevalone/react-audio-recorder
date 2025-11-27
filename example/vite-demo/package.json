@@ -1,6 +1,6 @@
 {
   "name": "react-ts-audio-recorder-demo",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-ts-audio-recorder": "^1.1.1"
+    "react-ts-audio-recorder": "^1.1.2"
   },
   "devDependencies": {
     "@types/react": "^19.2.7",

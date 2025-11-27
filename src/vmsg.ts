@@ -139,6 +139,7 @@ function inlineWorker() {
   };
 }
 
+// Internal class - used by MultiRecorder, not part of public API
 export class Recorder {
   constructor(opts = {}, onStop = null) {
     // Can't use relative URL in blob worker, see:
@@ -302,7 +303,7 @@ export class Recorder {
   }
 }
 
-export class Form {
+class Form {
   constructor(opts = {}, resolve, reject) {
     this.recorder = new Recorder(opts, this.onStop.bind(this));
     this.resolve = resolve;
@@ -514,7 +515,7 @@ let shown = false;
  * @param {number=} opts.pitch - Initial pitch shift ([-1, 1], 0 by default)
  * @return {Promise.<Blob>} A promise that contains recorded blob when fulfilled.
  */
-export function record(opts) {
+function record(opts) {
   return new Promise((resolve, reject) => {
     if (shown) throw new Error("Record form is already opened");
     shown = true;
@@ -529,10 +530,8 @@ export function record(opts) {
   });
 }
 
-/**
- * All available public items.
- */
-export default { Recorder, Form, record };
+// Legacy API removed - Recorder, Form, and record() are now internal only
+// Use MultiRecorder from multi-recorder.ts instead
 
 // Borrowed from and slightly modified:
 // https://github.com/cwilso/Audio-Input-Effects/blob/master/js/jungle.js

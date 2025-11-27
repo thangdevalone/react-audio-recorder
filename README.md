@@ -153,27 +153,6 @@ recorder.close();
 | **MP3** | vmsg (LAME) | ✅ Yes | Small | Good | All modern browsers |
 | **WAV** | Custom PCM→WAV | ❌ No | Large | Lossless | All modern browsers |
 
-### Legacy API: `Recorder` and `record()`
-
-The original `Recorder` class and `record()` helper are still available for MP3-only use cases:
-
-```typescript
-import { Recorder, record } from "react-ts-audio-recorder";
-
-// High-level helper with UI
-const blob = await record({
-  wasmURL: "/vmsg.wasm",
-  pitch: 0
-});
-
-// Low-level control
-const recorder = new Recorder({ wasmURL: "/vmsg.wasm" });
-await recorder.init();
-recorder.startRecording();
-const blob = await recorder.stopRecording();
-recorder.close();
-```
-
 ## 📁 Assets
 
 ### Importing Assets with Vite
