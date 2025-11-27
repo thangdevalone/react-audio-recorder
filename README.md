@@ -1,115 +1,295 @@
 # react-ts-audio-recorder
 
-Lightweight and modern audio recording hooks for React. Built on top of the Web Audio API with friendly APIs, WAV fallback, MediaRecorder support for WebM/MP3, and an optional LameJS-powered MP3 encoder when the browser cannot emit MP3 natively.
+🎙️ Framework-agnostic multi-format audio recorder with MP3 and WAV support. Built on top of [Kagami/vmsg](https://github.com/Kagami/vmsg) for MP3 encoding, with custom PCM→WAV encoder.
 
-## Features
+## ✨ Features
 
-- 🎧 Hooks-first API (`useAudioRecorder`)
-- 🌐 WAV/WebM/MP3 formats with runtime capability detection
-- ⚙️ Web Audio API fallback for lossless WAV or LameJS fallback for MP3 anywhere
-- ⏱️ Duration, byte size, and chunk callbacks for streaming use-cases
-- 🧼 Minimal dependencies with lazy-loaded MP3 encoder
-- 📦 Ready for npm or GitHub Packages publishing
+- 🎯 **Multi-format support**: MP3 (vmsg WASM), WAV (PCM→WAV)
+- 📦 **Zero dependencies**: No runtime deps, just Web Audio API
+- 🚀 **Modern APIs**: Uses AudioWorklet (not deprecated ScriptProcessorNode)
+- 🎛️ **Pitch shift**: Built-in pitch adjustment for MP3 format
+- 🌐 **Browser support**: Works in all modern browsers (Chrome, Firefox, Safari, Edge)
+- 📱 **TypeScript**: Full TypeScript support with type definitions
+- ⚡ **Lightweight**: MP3 encoder ~73 KB gzipped, WAV no WASM needed
 
-## Installation
-
-Pick the package manager you already use. This repo uses **npm**:
+## 📦 Install
 
 ```bash
 npm install react-ts-audio-recorder
 ```
 
-## Quick start
+## 🚀 Quick Start
+
+### Basic Usage with MultiRecorder
+
+```typescript
+import { MultiRecorder } from "react-ts-audio-recorder";
+import vmsgWasm from "react-ts-audio-recorder/assets/vmsg.wasm?url";
+
+const recorder = new MultiRecorder({
+  format: "mp3", // "mp3" | "wav"
+  sampleRate: 48000,
+  wasmURL: vmsgWasm, // Only needed for MP3
+});
+
+await recorder.init();
+await recorder.startRecording();
+// ... recording ...
+const blob = await recorder.stopRecording();
+recorder.close();
+```
+
+### React Example
 
 ```tsx
-import { useAudioRecorder } from "react-ts-audio-recorder";
+import { useState, useRef } from "react";
+import { MultiRecorder, type AudioFormat } from "react-ts-audio-recorder";
+import vmsgWasm from "react-ts-audio-recorder/assets/vmsg.wasm?url";
 
-export function RecorderDemo() {
-  const recorder = useAudioRecorder({
-    format: "wav",
-    onStop: (recording) => {
-      console.log("Recording saved", recording);
-    }
-  });
+function AudioRecorder() {
+  const [isRecording, setIsRecording] = useState(false);
+  const recorderRef = useRef<MultiRecorder | null>(null);
+
+  const startRecording = async () => {
+    const recorder = new MultiRecorder({
+      format: "wav", // or "mp3"
+      sampleRate: 48000,
+      wasmURL: vmsgWasm,
+    });
+    
+    recorderRef.current = recorder;
+    await recorder.init();
+    await recorder.startRecording();
+    setIsRecording(true);
+  };
+
+  const stopRecording = async () => {
+    if (!recorderRef.current) return;
+    
+    const blob = await recorderRef.current.stopRecording();
+    recorderRef.current.close();
+    recorderRef.current = null;
+    setIsRecording(false);
+    
+    // Use the blob (e.g., create audio URL)
+    const url = URL.createObjectURL(blob);
+    console.log("Recorded audio:", url);
+  };
 
   return (
     <div>
-      <p>Status: {recorder.status}</p>
-      <p>Duration: {(recorder.durationMs / 1000).toFixed(1)}s</p>
-      <button onClick={recorder.start} disabled={!recorder.isBrowserSupported}>
-        Start
+      <button onClick={isRecording ? stopRecording : startRecording}>
+        {isRecording ? "Stop" : "Start"} Recording
       </button>
-      <button onClick={() => void recorder.stop()} disabled={recorder.status === "idle"}>
-        Stop
-      </button>
-      {recorder.recording && <audio src={recorder.recording.url} controls />}
     </div>
   );
 }
 ```
 
-## API
+## 📚 API Reference
 
-### `useAudioRecorder(options?: AudioRecorderOptions)`
+### `MultiRecorder`
+
+Main class for recording audio in multiple formats.
+
+#### Constructor
+
+```typescript
+new MultiRecorder(options: MultiRecorderOptions)
+```
+
+#### Options
 
 | Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `format` | `"wav" | "webm" | "mp3"` | `"webm"` | Target container/codec. WAV falls back to Web Audio API if needed. |
-| `channelCount` | `number` | `1` | Number of channels to capture. |
-| `sampleRate` | `number` | `48000` | Target sample rate. |
-| `timeSlice` | `number` | `0` | Time slice (ms) for chunked `MediaRecorder` data. |
-| `constraints` | `MediaStreamConstraints` | smart defaults | Pass custom `getUserMedia` constraints. |
-| `mediaRecorderOptions` | `MediaRecorderOptions` | - | Extend native recorder options (bitrate, etc.). |
-| `autoStopMs` | `number` | - | Automatically stop after the provided duration. |
-| `mp3` | `{ fallbackBitrateKbps?: number; preferFallback?: boolean; }` | `{ fallbackBitrateKbps: 128 }` | Configure the LameJS MP3 fallback (bitrate + whether to skip native MediaRecorder when available). |
-| `onChunk` | `(ctx) => void` | - | Receive every chunk as it's recorded. |
-| `onStop` | `(recording) => void` | - | Get the final blob metadata. |
-| `onError` | `(error) => void` | - | Error hook. |
+|--------|------|---------|-------------|
+| `format` | `"mp3" \| "wav"` | **Required** | Output audio format |
+| `sampleRate` | `number` | `48000` | Sample rate in Hz |
+| `wasmURL` | `string` | `"/vmsg.wasm"` | URL to vmsg.wasm (MP3 only) |
+| `shimURL` | `string` | `undefined` | WebAssembly polyfill URL (MP3 only) |
+| `pitch` | `number` | `0` | Pitch shift [-1, 1] (MP3 only) |
+| `workletURL` | `string` | `"/pcm-worklet.js"` | PCM worklet URL (WAV only) |
 
-### Returned fields
+#### Methods
 
-- `start()`, `stop()`, `pause()`, `resume()`, `reset()` helpers
-- `status`: `"idle" | "recording" | "paused" | "stopped" | "unsupported"`
-- `recording`: latest `AudioRecording` blob metadata
-- `durationMs`, `bytes`: live metrics
-- `stream`: underlying `MediaStream`
-- `supports`: capability flags per format
-- `isBrowserSupported`: guards SSR or unsupported clients
+##### `init(): Promise<void>`
 
-## Example UI (Vite + React)
+Initialize the recorder. Must be called before `startRecording()`.
 
-A ready-to-run Vite playground lives in `examples/vite-demo`.
+```typescript
+await recorder.init();
+```
+
+##### `startRecording(): Promise<void>`
+
+Start recording audio from the microphone.
+
+```typescript
+await recorder.startRecording();
+```
+
+##### `stopRecording(): Promise<Blob>`
+
+Stop recording and return the audio blob.
+
+```typescript
+const blob = await recorder.stopRecording();
+// blob.type will be:
+// - "audio/mpeg" for MP3
+// - "audio/wav" for WAV
+```
+
+##### `close(): void`
+
+Clean up resources. Always call this when done.
+
+```typescript
+recorder.close();
+```
+
+### Format Comparison
+
+| Format | Encoder | WASM Required | File Size | Quality | Browser Support |
+|--------|---------|---------------|-----------|---------|-----------------|
+| **MP3** | vmsg (LAME) | ✅ Yes | Small | Good | All modern browsers |
+| **WAV** | Custom PCM→WAV | ❌ No | Large | Lossless | All modern browsers |
+| **OGG/Opus** | MediaRecorder API | ❌ No | Small | Excellent | Chrome, Firefox, Edge |
+
+### Legacy API: `Recorder` and `record()`
+
+The original `Recorder` class and `record()` helper are still available for MP3-only use cases:
+
+```typescript
+import { Recorder, record } from "react-ts-audio-recorder";
+
+// High-level helper with UI
+const blob = await record({
+  wasmURL: "/vmsg.wasm",
+  pitch: 0
+});
+
+// Low-level control
+const recorder = new Recorder({ wasmURL: "/vmsg.wasm" });
+await recorder.init();
+recorder.startRecording();
+const blob = await recorder.stopRecording();
+recorder.close();
+```
+
+## 📁 Assets
+
+### Importing Assets with Vite
+
+```typescript
+// Import WASM file
+import vmsgWasm from "react-ts-audio-recorder/assets/vmsg.wasm?url";
+
+// Import PCM worklet
+import pcmWorklet from "react-ts-audio-recorder/assets/pcm-worklet.js?url";
+
+const recorder = new MultiRecorder({
+  format: "wav",
+  wasmURL: vmsgWasm,
+  workletURL: pcmWorklet,
+});
+```
+
+### Using Constants
+
+```typescript
+import { DEFAULT_VMSG_WASM_URL, PCM_WORKLET_URL, loadPCMWorklet } from "react-ts-audio-recorder";
+
+// Use default URLs
+const recorder = new MultiRecorder({
+  format: "mp3",
+  wasmURL: DEFAULT_VMSG_WASM_URL,
+});
+
+// Load worklet manually
+const audioContext = new AudioContext();
+await loadPCMWorklet(audioContext, PCM_WORKLET_URL);
+```
+
+### Static Assets
+
+If not using a bundler, copy assets to your public directory:
+
+```
+public/
+  vmsg.wasm
+  pcm-worklet.js
+```
+
+Then reference them:
+
+```typescript
+const recorder = new MultiRecorder({
+  format: "mp3",
+  wasmURL: "/vmsg.wasm",
+  workletURL: "/pcm-worklet.js",
+});
+```
+
+## 🎨 Examples
+
+### Example: Format Selector
+
+See the full React example in `example/vite-demo/`:
 
 ```bash
-cd examples/vite-demo
+cd example/vite-demo
 npm install
 npm run dev
 ```
 
-The demo imports the hook straight from the root package (`react-ts-audio-recorder`) via a `file:` dependency so you can iterate on the library and the UI simultaneously.
+The demo includes:
+- Format selector (MP3/WAV)
+- Real-time recording timer
+- Audio preview and download
+- Error handling
 
-## MP3 fallback encoding
+## 🔧 Development
 
-Most stable browsers still cannot emit MP3 blobs through `MediaRecorder`. When you request `format: "mp3"`, the hook will:
+```bash
+# Install dependencies
+npm install
 
-1. Prefer the native `MediaRecorder` pipeline when `MediaRecorder.isTypeSupported("audio/mpeg")` returns `true`.
-2. Automatically fall back to recording raw PCM frames and lazily loading **LameJS** to encode them into MP3 entirely in JavaScript whenever the native API is missing.
+# Build
+npm run build
 
-You can tweak the fallback through the `mp3` option:
+# Watch mode
+npm run dev
 
-```ts
-const recorder = useAudioRecorder({
-  format: "mp3",
-  mp3: {
-    fallbackBitrateKbps: 192,
-    preferFallback: false // set true to always use the LameJS path
-  }
-});
+# Type check
+npm run typecheck
 ```
 
-The fallback kicks in as long as `AudioContext` is available, so MP3 becomes a reliable target even on Safari or Chromium builds without native encoder support.
+## 📝 Notes
 
-## License
+### Browser Compatibility
 
-MIT © Thang Dev
+- **MP3**: Requires WebAssembly support (all modern browsers)
+- **WAV**: Works everywhere (no WASM needed)
+- **OGG/Opus**: Requires `MediaRecorder` with Opus codec support
+  - ✅ Chrome/Edge: Full support
+  - ✅ Firefox: Full support
+  - ⚠️ Safari: Limited support (use MP3 or WAV instead)
 
+### Performance
+
+- **MP3**: Best compression, universal support, requires WASM
+- **WAV**: No compression, largest files, fastest encoding, no WASM needed
+
+### AudioWorklet vs ScriptProcessorNode
+
+This library uses `AudioWorklet` (modern API) instead of deprecated `ScriptProcessorNode` for better performance and future compatibility.
+
+## 📄 License
+
+MIT © 2025 ThangDevAlone
+
+The MP3 encoder and CSS originate from [Kagami/vmsg](https://github.com/Kagami/vmsg) (CC0). Please keep attribution when redistributing.
+
+## 🙏 Credits
+
+- [Kagami/vmsg](https://github.com/Kagami/vmsg) - Original MP3 encoder implementation
+- Web Audio API - Modern audio processing

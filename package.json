@@ -1,43 +1,18 @@
 {
   "name": "react-ts-audio-recorder",
-  "version": "1.0.0",
-  "description": "Lightweight React audio recorder built on the Web Audio API with WAV, WebM, and MP3 support.",
-  "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/index.js"
-    },
-    "./package.json": "./package.json"
-  },
-  "files": [
-    "dist"
-  ],
-  "sideEffects": false,
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "prepare": "npm run build"
-  },
+  "version": "1.1.0",
+  "description": "Framework-agnostic MP3 voice message recorder inspired by Kagami/vmsg.",
   "keywords": [
     "react",
     "audio",
     "recorder",
-    "web-audio-api",
-    "mediarecorder",
-    "wav",
-    "webm",
+    "hooks",
+    "web-audio",
     "mp3",
-    "hooks"
+    "wav",
+    "webm"
   ],
-  "author": "Thang Dev",
+  "author": "ThangDevAlone",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -55,21 +30,33 @@
       "optional": false
     }
   },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./assets/vmsg.wasm": "./assets/vmsg.wasm",
+    "./assets/pcm-worklet.js": "./assets/pcm-worklet.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
   "devDependencies": {
-    "@types/react": "^19.2.7",
-    "@vitest/coverage-v8": "^4.0.14",
-    "happy-dom": "^20.0.10",
-    "react": "^19.2.0",
-    "tslib": "^2.8.1",
-    "tsup": "^8.5.1",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.14"
-  },
-  "engines": {
-    "node": ">=18.17.0"
-  },
-  "packageManager": "npm@10.9.0",
-  "dependencies": {
-    "lamejs": "^1.2.1"
+    "@types/node": "^22.7.4",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.3"
   }
 }

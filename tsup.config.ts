@@ -7,9 +7,10 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   minify: false,
-  target: "es2021",
-  splitting: false,
+  target: "es2019",
   treeshake: true,
-  legacyOutput: true
+  splitting: false,
+  platform: "browser"
 });
+
 
