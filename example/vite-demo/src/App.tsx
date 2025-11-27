@@ -5,6 +5,7 @@ import {
     type AudioFormat,
 } from "react-ts-audio-recorder";
 import vmsgWasm from "react-ts-audio-recorder/assets/vmsg.wasm?url";
+import pcmWorklet from "react-ts-audio-recorder/assets/pcm-worklet.js?url";
 import "./style.css";
 
 function formatTime(ms: number): string {
@@ -71,6 +72,7 @@ export default function App() {
         format: selectedFormat,
         sampleRate: 48000,
         wasmURL: vmsgWasm || DEFAULT_VMSG_WASM_URL,
+        workletURL: pcmWorklet,
       });
 
       recorderRef.current = recorder;
