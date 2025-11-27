@@ -1,6 +1,6 @@
 {
   "name": "react-ts-audio-recorder",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Framework-agnostic MP3 voice message recorder inspired by Kagami/vmsg.",
   "keywords": [
     "react",

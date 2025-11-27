@@ -152,7 +152,6 @@ recorder.close();
 |--------|---------|---------------|-----------|---------|-----------------|
 | **MP3** | vmsg (LAME) | ✅ Yes | Small | Good | All modern browsers |
 | **WAV** | Custom PCM→WAV | ❌ No | Large | Lossless | All modern browsers |
-| **OGG/Opus** | MediaRecorder API | ❌ No | Small | Excellent | Chrome, Firefox, Edge |
 
 ### Legacy API: `Recorder` and `record()`
 
@@ -269,10 +268,6 @@ npm run typecheck
 
 - **MP3**: Requires WebAssembly support (all modern browsers)
 - **WAV**: Works everywhere (no WASM needed)
-- **OGG/Opus**: Requires `MediaRecorder` with Opus codec support
-  - ✅ Chrome/Edge: Full support
-  - ✅ Firefox: Full support
-  - ⚠️ Safari: Limited support (use MP3 or WAV instead)
 
 ### Performance
 
